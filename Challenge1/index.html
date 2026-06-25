@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Find Survivor — Josephus Problem</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f4f4f2;
+      --bg-tertiary: #eeecea;
+      --text: #1a1a1a;
+      --text-secondary: #6b6b68;
+      --border: rgba(0,0,0,0.12);
+      --border-md: rgba(0,0,0,0.22);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --green-bg: #E1F5EE;
+      --green-border: #1D9E75;
+      --green-text: #085041;
+      --red-bg: #FCEBEB;
+      --red-border: #E24B4A;
+      --red-text: #791F1F;
+      --teal: #1D9E75;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1c;
+        --bg-secondary: #2a2a28;
+        --bg-tertiary: #242422;
+        --text: #f0ede8;
+        --text-secondary: #9a9892;
+        --border: rgba(255,255,255,0.12);
+        --border-md: rgba(255,255,255,0.22);
+        --green-bg: #04342C;
+        --green-border: #1D9E75;
+        --green-text: #9FE1CB;
+        --red-bg: #501313;
+        --red-border: #E24B4A;
+        --red-text: #F7C1C1;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-tertiary);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 10px;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+
+    .ctrl-box {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+    }
+
+    .ctrl-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type=range] {
+      flex: 1;
+      accent-color: var(--teal);
+      cursor: pointer;
+    }
+
+    .ctrl-val {
+      font-size: 13px;
+      font-weight: 500;
+      min-width: 36px;
+      text-align: right;
+      color: var(--text);
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+      min-height: 30px;
+    }
+
+    .tag {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg-secondary);
+      border: 0.5px solid var(--border-md);
+      border-radius: 20px;
+      padding: 3px 8px 3px 12px;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .tag-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .tag-remove:hover { color: var(--text); }
+
+    .add-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .add-row input[type=text] {
+      flex: 1;
+      height: 34px;
+      font-size: 13px;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border-md);
+      background: var(--bg-secondary);
+      color: var(--text);
+      padding: 0 10px;
+      outline: none;
+    }
+
+    .add-row input[type=text]:focus {
+      border-color: var(--teal);
+    }
+
+    .btn {
+      height: 34px;
+      padding: 0 14px;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border-md);
+      background: var(--bg-secondary);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background .15s;
+    }
+
+    .btn:hover { background: var(--bg-tertiary); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    .btn-primary {
+      width: 100%;
+      height: 42px;
+      justify-content: center;
+      font-size: 14px;
+      border-color: var(--teal);
+      color: var(--teal);
+      margin-bottom: 1rem;
+    }
+
+    .btn-primary:hover { background: var(--green-bg); }
+
+    .step-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 1rem;
+    }
+
+    .step-info {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    #arena {
+      width: 100%;
+      height: 280px;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #arena svg { overflow: visible; }
+
+    .log-scroll {
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      font-size: 13px;
+      padding: 4px 0;
+      border-bottom: 0.5px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .log-entry:last-child { border-bottom: none; }
+    .killed-name { color: var(--red-border); }
+    .survivor-name { color: var(--teal); font-weight: 500; }
+
+    .result-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .result-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--green-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      font-size: 16px;
+      color: var(--green-text);
+      flex-shrink: 0;
+      border: 2px solid var(--green-border);
+    }
+
+    .result-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 2px;
+    }
+
+    .result-name {
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--teal);
+    }
+
+    .result-pos {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Find Survivor</h1>
+  <p class="subtitle">Josephus problem — circular elimination visualizer</p>
+
+  <div class="card">
+    <div class="section-label">Settings</div>
+    <div class="controls-grid">
+      <div class="ctrl-box">
+        <div class="section-label" style="margin-bottom:6px">Eliminate every N</div>
+        <div class="ctrl-row">
+          <input type="range" id="stepSlider" min="2" max="10" value="3" step="1">
+          <span class="ctrl-val" id="stepVal">3</span>
+        </div>
+      </div>
+      <div class="ctrl-box">
+        <div class="section-label" style="margin-bottom:6px">Animation speed</div>
+        <div class="ctrl-row">
+          <input type="range" id="speedSlider" min="200" max="1500" value="700" step="100">
+          <span class="ctrl-val" id="speedVal">700ms</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">People in circle</div>
+    <div class="tags" id="tagList"></div>
+    <div class="add-row">
+      <input type="text" id="nameInput" placeholder="Type a name and press Enter..." maxlength="20">
+      <button class="btn" onclick="addName()"><i class="ti ti-plus"></i> Add</button>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="startSim()">
+    <i class="ti ti-player-play"></i> Run simulation
+  </button>
+
+  <div id="simSection" class="hidden">
+    <div class="step-controls">
+      <button class="btn" id="prevBtn" onclick="stepBack()" disabled><i class="ti ti-arrow-left"></i></button>
+      <button class="btn" id="nextBtn" onclick="stepForward()"><i class="ti ti-arrow-right"></i></button>
+      <span class="step-info" id="stepInfo">Step 0</span>
+      <button class="btn" id="playBtn" onclick="autoPlay()"><i class="ti ti-player-play"></i> Auto</button>
+      <button class="btn" onclick="resetSim()"><i class="ti ti-refresh"></i></button>
+    </div>
+
+    <div class="card" style="padding:0.75rem 1rem">
+      <div id="arena"></div>
+    </div>
+
+    <div class="card" id="logCard">
+      <div class="section-label">Elimination log</div>
+      <div class="log-scroll" id="logEntries"></div>
+    </div>
+
+    <div class="card" id="resultCard" style="display:none">
+      <div class="result-card">
+        <div class="result-avatar" id="resultAvatar"></div>
+        <div>
+          <div class="result-label">Survivor</div>
+          <div class="result-name" id="resultName"></div>
+          <div class="result-pos" id="resultPos"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let people = ['Abebe', 'Kebede', 'Chala', 'Tola', 'Girma'];
+  let history = [];
+  let currentStep = 0;
+  let autoTimer = null;
+
+  const stepSlider = document.getElementById('stepSlider');
+  const stepVal = document.getElementById('stepVal');
+  const speedSlider = document.getElementById('speedSlider');
+  const speedVal = document.getElementById('speedVal');
+
+  stepSlider.oninput = () => stepVal.textContent = stepSlider.value;
+  speedSlider.oninput = () => speedVal.textContent = speedSlider.value + 'ms';
+
+  function renderTags() {
+    document.getElementById('tagList').innerHTML = people.map((p, i) =>
+      `<div class="tag">${p}
+        <button class="tag-remove" onclick="removeName(${i})" aria-label="Remove ${p}">
+          <i class="ti ti-x" style="font-size:13px"></i>
+        </button>
+      </div>`
+    ).join('');
+  }
+
+  function addName() {
+    const inp = document.getElementById('nameInput');
+    const v = inp.value.trim();
+    if (!v || people.includes(v)) { inp.value = ''; return; }
+    people.push(v);
+    inp.value = '';
+    renderTags();
+  }
+
+  function removeName(i) {
+    people.splice(i, 1);
+    renderTags();
+  }
+
+  document.getElementById('nameInput').onkeydown = e => { if (e.key === 'Enter') addName(); };
+
+  function buildHistory(n, pList) {
+    const steps = [];
+    let arr = [...pList];
+    let idx = 0;
+    steps.push({ alive: [...arr], killed: null });
+    while (arr.length > 1) {
+      idx = (idx + n - 1) % arr.length;
+      const killed = arr.splice(idx, 1)[0];
+      if (idx >= arr.length) idx = 0;
+      steps.push({ alive: [...arr], killed });
+    }
+    return steps;
+  }
+
+  function drawCircle(state) {
+    const arena = document.getElementById('arena');
+    const W = arena.clientWidth || 580;
+    const H = 280;
+    const cx = W / 2, cy = H / 2;
+    const r = Math.min(W, H) * 0.36;
+    const origPeople = history[0].alive;
+    const total = origPeople.length;
+    const angleStep = (2 * Math.PI) / total;
+    const nodeR = total > 9 ? 20 : total > 6 ? 23 : 26;
+
+    let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="overflow:visible">`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="1"/>`;
+
+    origPeople.forEach((name, i) => {
+      const angle = -Math.PI / 2 + i * angleStep;
+      const nx = cx + r * Math.cos(angle);
+      const ny = cy + r * Math.sin(angle);
+      const isAlive = state.alive.includes(name);
+      const isKilled = state.killed === name;
+      const isSurvivor = state.alive.length === 1 && state.alive[0] === name;
+      const short = name.length > 7 ? name.slice(0, 6) + '…' : name;
+
+      let fill, stroke, txtFill, opacity, strokeW;
+      if (isSurvivor) {
+        fill = 'var(--green-bg)'; stroke = 'var(--green-border)';
+        txtFill = 'var(--green-text)'; opacity = 1; strokeW = 2;
+      } else if (isKilled) {
+        fill = 'var(--red-bg)'; stroke = 'var(--red-border)';
+        txtFill = 'var(--red-text)'; opacity = 1; strokeW = 2;
+      } else if (!isAlive) {
+        fill = 'var(--bg-secondary)'; stroke = 'var(--border)';
+        txtFill = 'var(--text-secondary)'; opacity = 0.3; strokeW = 0.5;
+      } else {
+        fill = 'var(--bg)'; stroke = 'var(--border-md)';
+        txtFill = 'var(--text)'; opacity = 1; strokeW = 1;
+      }
+
+      svg += `<circle cx="${nx}" cy="${ny}" r="${nodeR}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" opacity="${opacity}"/>`;
+      svg += `<text x="${nx}" y="${ny + 4}" text-anchor="middle" font-size="${total > 9 ? 9 : 11}" fill="${txtFill}" opacity="${opacity}" font-family="-apple-system,sans-serif">${short}</text>`;
+
+      if (isKilled) {
+        const s = nodeR * 0.5;
+        svg += `<line x1="${nx - s}" y1="${ny - s}" x2="${nx + s}" y2="${ny + s}" stroke="var(--red-border)" stroke-width="2" opacity="0.9"/>`;
+        svg += `<line x1="${nx + s}" y1="${ny - s}" x2="${nx - s}" y2="${ny + s}" stroke="var(--red-border)" stroke-width="2" opacity="0.9"/>`;
+      }
+    });
+
+    svg += '</svg>';
+    arena.innerHTML = svg;
+  }
+
+  function updateLog() {
+    let html = '';
+    for (let i = 1; i <= currentStep; i++) {
+      const s = history[i];
+      if (s.killed) {
+        if (s.alive.length === 1) {
+          html += `<div class="log-entry">Step ${i}: <span class="killed-name">✕ ${s.killed}</span> eliminated → <span class="survivor-name">★ ${s.alive[0]} survives!</span></div>`;
+        } else {
+          html += `<div class="log-entry">Step ${i}: <span class="killed-name">✕ ${s.killed}</span> eliminated → ${s.alive.join(', ')}</div>`;
+        }
+      }
+    }
+    const el = document.getElementById('logEntries');
+    el.innerHTML = html || '<div class="log-entry" style="color:var(--text-secondary)">Elimination log will appear here…</div>';
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function updateResult() {
+    const rc = document.getElementById('resultCard');
+    const last = history[history.length - 1];
+    if (currentStep === history.length - 1 && history.length > 1) {
+      const name = last.alive[0];
+      document.getElementById('resultAvatar').textContent = name.slice(0, 2).toUpperCase();
+      document.getElementById('resultName').textContent = name;
+      document.getElementById('resultPos').textContent =
+        `Original position ${history[0].alive.indexOf(name) + 1} of ${history[0].alive.length}`;
+      rc.style.display = 'block';
+    } else {
+      rc.style.display = 'none';
+    }
+  }
+
+  function updateStepInfo() {
+    const total = history.length - 1;
+    document.getElementById('stepInfo').textContent = `Step ${currentStep} / ${total}`;
+    document.getElementById('prevBtn').disabled = currentStep === 0;
+    document.getElementById('nextBtn').disabled = currentStep >= total;
+  }
+
+  function renderStep() {
+    drawCircle(history[currentStep]);
+    updateLog();
+    updateResult();
+    updateStepInfo();
+  }
+
+  function stepForward() {
+    if (currentStep < history.length - 1) { currentStep++; renderStep(); }
+  }
+
+  function stepBack() {
+    if (currentStep > 0) { currentStep--; renderStep(); }
+  }
+
+  function autoPlay() {
+    const pb = document.getElementById('playBtn');
+    if (autoTimer) {
+      clearInterval(autoTimer);
+      autoTimer = null;
+      pb.innerHTML = '<i class="ti ti-player-play"></i> Auto';
+      return;
+    }
+    pb.innerHTML = '<i class="ti ti-player-pause"></i> Pause';
+    autoTimer = setInterval(() => {
+      if (currentStep >= history.length - 1) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+        pb.innerHTML = '<i class="ti ti-player-play"></i> Auto';
+        return;
+      }
+      stepForward();
+    }, parseInt(speedSlider.value));
+  }
+
+  function startSim() {
+    if (people.length < 2) { alert('Add at least 2 people to run the simulation.'); return; }
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    const n = parseInt(stepSlider.value);
+    history = buildHistory(n, people);
+    currentStep = 0;
+    document.getElementById('simSection').classList.remove('hidden');
+    document.getElementById('playBtn').innerHTML = '<i class="ti ti-player-play"></i> Auto';
+    renderStep();
+    document.getElementById('simSection').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function resetSim() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('playBtn').innerHTML = '<i class="ti ti-player-play"></i> Auto';
+    currentStep = 0;
+    if (history.length) renderStep();
+  }
+
+  renderTags();
+</script>
+</body>
+</html>
