@@ -2,7 +2,7 @@
 
 # The Josephus Challenge
 ## Live Demo
- (open)[https://josephus-challenge1.netlify.app/]
+ (open)([https://josephus-challenge1.netlify.app/])
 ## The Story Behind The Problem
 
 Imagine you're in a village with your friends - Abebe, Kebede, Chala, Tola, and Girma. One terrifying day, terrorists capture all of you. They have a twisted game: everyone stands in a circle, and they count to **3**. Every **3rd person** is killed. They keep counting until only one person remains. That one person gets to live.
