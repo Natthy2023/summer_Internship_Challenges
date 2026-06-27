@@ -1,9 +1,10 @@
-# ፩ ፪ ፫ — Ge'ez ↔ Arabic Numeral Converter
+# **Challenge 2** 
+## ፩ ፪ ፫ — Ge'ez ↔ Arabic Numeral Converter
 
 A fully self-contained web app that converts between **Ge'ez (Ethiopic) numerals** and **Arabic integers** in both directions — no server, no build step, no dependencies.
 
-> **Challenge 2** · AASTU · Group 7, Section C
 
+> LIVE DEMO: [Open](https://ethiopian-number-converter.netlify.app/)
 ---
 
 ## 📁 Files
