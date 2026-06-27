@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ge'ez ↔ Arabic Converter</title>
+
+<!-- Google Fonts: Noto Serif Ethiopic for authentic Ge'ez rendering -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Ethiopic:wdth,wght@75,400;75,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  /* ── Design tokens ─────────────────────────────────────── */
+  :root {
+    --parchment:   #F5EDD8;
+    --ink:         #1A1209;
+    --ember:       #C0392B;
+    --gold:        #B8860B;
+    --gold-light:  #F0C040;
+    --panel:       #FFFDF5;
+    --border:      #D4C09A;
+    --muted:       #7A6A4A;
+    --shadow:      0 4px 24px rgba(26,18,9,.12);
+    --radius:      12px;
+    --geez-font:   'Noto Serif Ethiopic', serif;
+    --ui-font:     'Inter', system-ui, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--ui-font);
+    background: var(--parchment);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Header ────────────────────────────────────────────── */
+  header {
+    width: 100%;
+    padding: 2.5rem 1rem 1.5rem;
+    text-align: center;
+    border-bottom: 1.5px solid var(--border);
+    background: linear-gradient(180deg, #FFF8E8 0%, var(--parchment) 100%);
+  }
+
+  .script-sample {
+    font-family: var(--geez-font);
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: var(--ember);
+    line-height: 1;
+    margin-bottom: .4rem;
+  }
+
+  header h1 {
+    font-family: var(--ui-font);
+    font-size: clamp(.85rem, 2vw, 1rem);
+    font-weight: 500;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── Main card ─────────────────────────────────────────── */
+  main {
+    width: 100%;
+    max-width: 680px;
+    padding: 2rem 1rem 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* ── Direction toggle ──────────────────────────────────── */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .dir-label {
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .toggle-track {
+    position: relative;
+    width: 56px;
+    height: 28px;
+    background: var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    border: none;
+    transition: background .25s;
+    flex-shrink: 0;
+  }
+  .toggle-track.active { background: var(--ember); }
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 22px; height: 22px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .25s;
+    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  }
+  .toggle-track.active::after { transform: translateX(28px); }
+
+  /* ── Conversion panel ──────────────────────────────────── */
+  .panel {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .panel-section {
+    padding: 1.5rem 1.75rem;
+  }
+  .panel-section + .panel-section {
+    border-top: 1.5px solid var(--border);
+  }
+
+  .section-eyebrow {
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: .6rem;
+  }
+
+  /* Input */
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  input[type="text"],
+  input[type="number"] {
+    width: 100%;
+    padding: .85rem 3rem .85rem 1rem;
+    font-size: 1.2rem;
+    font-family: var(--ui-font);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button { display: none; }
+
+  input:focus {
+    border-color: var(--ember);
+    box-shadow: 0 0 0 3px rgba(192,57,43,.15);
+  }
+
+  input.geez-input {
+    font-family: var(--geez-font);
+    font-size: 1.5rem;
+    letter-spacing: .05em;
+  }
+
+  .clear-btn {
+    position: absolute;
+    right: .6rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--muted);
+    padding: .3rem;
+    border-radius: 50%;
+    transition: color .15s, background .15s;
+    line-height: 1;
+  }
+  .clear-btn:hover { color: var(--ember); background: rgba(192,57,43,.08); }
+
+  /* Convert button */
+  .convert-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    width: 100%;
+    padding: .9rem;
+    font-family: var(--ui-font);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    color: #fff;
+    background: var(--ember);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+  }
+  .convert-btn:hover { background: #a93226; }
+  .convert-btn:active { transform: scale(.98); }
+  .convert-btn .arrow { font-size: 1.1rem; }
+
+  /* Output */
+  .output-box {
+    min-height: 72px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    background: #FFFEF9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .output-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+    flex: 1;
+    word-break: break-all;
+  }
+  .output-value.geez-output {
+    font-family: var(--geez-font);
+    font-size: 2rem;
+    color: var(--ember);
+  }
+  .output-value.empty {
+    font-family: var(--ui-font);
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .copy-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: .35rem .6rem;
+    cursor: pointer;
+    font-size: .85rem;
+    color: var(--muted);
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .copy-btn.copied { border-color: #27ae60; color: #27ae60; }
+
+  /* Error */
+  .error-msg {
+    font-size: .82rem;
+    color: var(--ember);
+    margin-top: .5rem;
+    min-height: 1.1em;
+    font-weight: 500;
+  }
+
+  /* ── Reference table ───────────────────────────────────── */
+  .ref-card {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .ref-header {
+    padding: 1rem 1.5rem;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+  .ref-header:hover { background: rgba(0,0,0,.02); }
+  .ref-chevron { transition: transform .3s; }
+  .ref-header.open .ref-chevron { transform: rotate(180deg); }
+
+  .ref-body {
+    display: none;
+    padding: .5rem 1.5rem 1.5rem;
+    border-top: 1.5px solid var(--border);
+  }
+  .ref-body.visible { display: block; }
+
+  .ref-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: .5rem;
+    margin-top: .75rem;
+  }
+
+  .ref-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: .5rem .25rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    gap: .2rem;
+  }
+  .ref-geez {
+    font-family: var(--geez-font);
+    font-size: 1.4rem;
+    color: var(--ember);
+    font-weight: 700;
+  }
+  .ref-arabic { font-size: .75rem; color: var(--muted); font-weight: 600; }
+
+  /* ── Footer ────────────────────────────────────────────── */
+  footer {
+    padding: 1.5rem;
+    text-align: center;
+    font-size: .75rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    width: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="script-sample" aria-hidden="true">፩ ፪ ፫ ፬ ፭</div>
+  <h1>Ge'ez &amp; Arabic Numeral Converter</h1>
+</header>
+
+<main>
+
+  <!-- Direction Toggle -->
+  <div class="toggle-row">
+    <span class="dir-label" id="lbl-from">Arabic → Ge'ez</span>
+    <button class="toggle-track" id="dirToggle" aria-label="Swap conversion direction" aria-pressed="false"></button>
+    <span class="dir-label" id="lbl-to">Ge'ez → Arabic</span>
+  </div>
+
+  <!-- Panel -->
+  <div class="panel">
+
+    <!-- Input section -->
+    <div class="panel-section">
+      <div class="section-eyebrow" id="input-label">Enter Arabic Number</div>
+      <div class="input-wrap">
+        <input type="number" id="mainInput" placeholder="e.g. 1995" min="1" max="99999999"
+               inputmode="numeric" aria-labelledby="input-label" autocomplete="off" />
+        <button class="clear-btn" id="clearBtn" aria-label="Clear input">✕</button>
+      </div>
+      <div class="error-msg" id="errorMsg" role="alert"></div>
+    </div>
+
+    <!-- Button -->
+    <div class="panel-section">
+      <button class="convert-btn" id="convertBtn">
+        <span class="arrow">⇄</span> Convert
+      </button>
+    </div>
+
+    <!-- Output section -->
+    <div class="panel-section">
+      <div class="section-eyebrow" id="output-label">Ge'ez Result</div>
+      <div class="output-box">
+        <div class="output-value geez-output empty" id="outputValue">—</div>
+        <button class="copy-btn" id="copyBtn" aria-label="Copy result" style="display:none">Copy</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Reference table (collapsible) -->
+  <div class="ref-card">
+    <div class="ref-header" id="refToggle" role="button" tabindex="0" aria-expanded="false">
+      <span>Ge'ez Numeral Reference</span>
+      <span class="ref-chevron">▾</span>
+    </div>
+    <div class="ref-body" id="refBody" role="region">
+      <div class="ref-grid" id="refGrid"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Ge'ez numerals (Ethiopic script) · Supported range 1 – 99,999,999
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Ge'ez ↔ Arabic Numeral Converter  —  embedded logic
+   (Identical algorithm lives in ethiopian.js for reuse outside the browser)
+═══════════════════════════════════════════════════════════════════════════ */
+
+const ONES = ['', '፩', '፪', '፫', '፬', '፭', '፮', '፯', '፰', '፱'];
+const TENS = ['', '፲', '፳', '፴', '፵', '፶', '፷', '፸', '፹', '፺'];
+
+const CHAR_VALUE = {
+  '፩':1,'፪':2,'፫':3,'፬':4,'፭':5,'፮':6,'፯':7,'፰':8,'፱':9,
+  '፲':10,'፳':20,'፴':30,'፵':40,'፶':50,'፷':60,'፸':70,'፹':80,'፺':90,
+  '፻':100,'፼':10000,
+};
+
+/* ── Arabic → Ge'ez ─────────────────────────────────────────────────────── */
+
+function encodeChunk(n) {
+  const h = Math.floor(n / 100), rem = n % 100;
+  const t = Math.floor(rem / 10), o = rem % 10;
+  let s = '';
+  if (h > 0) { if (h > 1) s += ONES[h]; s += '፻'; }
+  s += TENS[t];
+  s += ONES[o];
+  return s;
+}
+
+function arabicToEthiopian(n) {
+  n = Math.floor(n);
+  if (n < 1 || n > 99_999_999) throw new RangeError('Enter a number between 1 and 99,999,999');
+  const upper = Math.floor(n / 10000);
+  const lower = n % 10000;
+  let result = '';
+  if (upper > 0) { if (upper > 1) result += encodeChunk(upper); result += '፼'; }
+  if (lower > 0) result += encodeChunk(lower);
+  return result;
+}
+
+/* ── Ge\u2019ez \u2192 Arabic \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+
+function isValidEthiopian(str) {
+  return str.length > 0 && [...str].every(c => c in CHAR_VALUE);
+}
+
+function decodeSimple(str) {
+  let total = 0;
+  for (const ch of str) {
+    const v = CHAR_VALUE[ch];
+    if (v === 100 || v === 10000) throw new SyntaxError(`Unexpected ፻/፼`);
+    total += v;
+  }
+  return total;
+}
+
+function decodeSegment(seg) {
+  if (!seg) return 0;
+  const parts = seg.split('፻');
+  if (parts.length > 2) throw new SyntaxError('Multiple ፻ in one group');
+  if (parts.length === 2) {
+    const mult = parts[0] === '' ? 1 : decodeSimple(parts[0]);
+    return mult * 100 + decodeSimple(parts[1]);
+  }
+  return decodeSimple(parts[0]);
+}
+
+function ethiopianToArabic(str) {
+  str = str.trim();
+  if (!isValidEthiopian(str)) throw new SyntaxError("Invalid Ge\u2019ez characters detected");
+  const groups = str.split('፼');
+  if (groups.length > 2) throw new SyntaxError('Only one ፼ supported (max 99,999,999)');
+  if (groups.length === 2) {
+    const upper = groups[0] === '' ? 1 : decodeSegment(groups[0]);
+    return upper * 10000 + decodeSegment(groups[1]);
+  }
+  return decodeSegment(str);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UI Logic
+═══════════════════════════════════════════════════════════════════════════ */
+
+let geezMode = false; // false = Arabic to Geez, true = Geez to Arabic
+
+const dirToggle  = document.getElementById('dirToggle');
+const mainInput  = document.getElementById('mainInput');
+const clearBtn   = document.getElementById('clearBtn');
+const convertBtn = document.getElementById('convertBtn');
+const outputValue= document.getElementById('outputValue');
+const errorMsg   = document.getElementById('errorMsg');
+const copyBtn    = document.getElementById('copyBtn');
+const inputLabel = document.getElementById('input-label');
+const outputLabel= document.getElementById('output-label');
+
+function setMode(toGeez) {
+  geezMode = toGeez;
+  dirToggle.classList.toggle('active', geezMode);
+  dirToggle.setAttribute('aria-pressed', String(geezMode));
+
+  if (geezMode) {
+    // Geez to Arabic
+    mainInput.type = 'text';
+    mainInput.placeholder = 'e.g. ፲፱፻፹፯';
+    mainInput.classList.add('geez-input');
+    mainInput.inputMode = 'text';
+    inputLabel.textContent  = 'Enter Ge\'ez Number';
+    outputLabel.textContent = 'Arabic Result';
+    outputValue.classList.remove('geez-output');
+  } else {
+    // Arabic to Geez
+    mainInput.type = 'number';
+    mainInput.placeholder = 'e.g. 1995';
+    mainInput.classList.remove('geez-input');
+    mainInput.inputMode = 'numeric';
+    inputLabel.textContent  = 'Enter Arabic Number';
+    outputLabel.textContent = 'Ge\'ez Result';
+    outputValue.classList.add('geez-output');
+  }
+
+  resetOutput();
+  mainInput.value = '';
+  mainInput.focus();
+}
+
+function resetOutput() {
+  outputValue.textContent = '—';
+  outputValue.classList.add('empty');
+  copyBtn.style.display = 'none';
+  errorMsg.textContent = '';
+}
+
+function showResult(value) {
+  outputValue.textContent = value;
+  outputValue.classList.remove('empty');
+  copyBtn.style.display = 'inline-block';
+  errorMsg.textContent = '';
+}
+
+function showError(msg) {
+  resetOutput();
+  errorMsg.textContent = msg;
+}
+
+function doConvert() {
+  const raw = mainInput.value.trim();
+  if (!raw) { showError('Please enter a value to convert.'); return; }
+
+  try {
+    if (geezMode) {
+      const result = ethiopianToArabic(raw);
+      showResult(result.toLocaleString());
+    } else {
+      const n = parseInt(raw, 10);
+      if (isNaN(n)) { showError('Not a valid number.'); return; }
+      const result = arabicToEthiopian(n);
+      showResult(result);
+    }
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+// Events
+dirToggle.addEventListener('click', () => setMode(!geezMode));
+convertBtn.addEventListener('click', doConvert);
+mainInput.addEventListener('keydown', e => { if (e.key === 'Enter') doConvert(); });
+clearBtn.addEventListener('click', () => { mainInput.value = ''; resetOutput(); mainInput.focus(); });
+
+copyBtn.addEventListener('click', () => {
+  const text = outputValue.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    copyBtn.textContent = '✓ Copied';
+    copyBtn.classList.add('copied');
+    setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1800);
+  });
+});
+
+/* ── Reference table ─────────────────────────────────────────────────────── */
+
+const REF_CHARS = [
+  ['፩',1],['፪',2],['፫',3],['፬',4],['፭',5],['፮',6],['፯',7],['፰',8],['፱',9],
+  ['፲',10],['፳',20],['፴',30],['፵',40],['፶',50],['፷',60],['፸',70],['፹',80],['፺',90],
+  ['፻',100],['፼',10000],
+];
+
+const refGrid = document.getElementById('refGrid');
+REF_CHARS.forEach(([geez, arabic]) => {
+  const cell = document.createElement('div');
+  cell.className = 'ref-cell';
+  cell.innerHTML = `<span class="ref-geez">${geez}</span><span class="ref-arabic">${arabic.toLocaleString()}</span>`;
+  // Clicking a char fills the input when in the matching mode
+  cell.style.cursor = 'pointer';
+  cell.addEventListener('click', () => {
+    if (geezMode) {
+      mainInput.value += geez;
+      mainInput.focus();
+    }
+  });
+  refGrid.appendChild(cell);
+});
+
+const refToggle = document.getElementById('refToggle');
+const refBody   = document.getElementById('refBody');
+
+refToggle.addEventListener('click', () => {
+  const open = refBody.classList.toggle('visible');
+  refToggle.classList.toggle('open', open);
+  refToggle.setAttribute('aria-expanded', String(open));
+});
+refToggle.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); refToggle.click(); }
+});
+</script>
+</body>
+</html>
